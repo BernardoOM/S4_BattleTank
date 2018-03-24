@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "TankPlayerController.h"
+#include "Engine/World.h"
 
 
 void ATankPlayerController::BeginPlay() {
@@ -38,9 +39,8 @@ void ATankPlayerController::AimTowardsCrosshair() {
 	FVector outHitLocation; // OUT Parameter
 
 	if (GetSightRayHitLocation(outHitLocation)) {
-
 		//TODO Tell controlled tank to aim at this point 
-		//UE_LOG(LogTemp, Warning, TEXT("HitLocation: %s"), *outHitLocation.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("HitLocation: %s"), *outHitLocation.ToString());
 	}
 }
 
@@ -52,10 +52,36 @@ bool ATankPlayerController::GetSightRayHitLocation(FVector& outHitLocation) cons
 	GetViewportSize(viewPortSizeX, viewPortSizeY);
 	auto screenLocation = FVector2D(viewPortSizeX * crossHairXLocation, viewPortSizeY * crossHairYLocation);
 	//"De-project" the screen position of the crosshair to a world direction
-	//line-trace (raycast) along that look direction, and see what we hit (up to max range)
+	FVector lookDirection;
+	if (GetLookDirection(screenLocation, lookDirection)) {
+		//line-trace (raycast) along that lookDirection, and see what we hit (up to max range)
+		GetLookVectorHitLocation(lookDirection,outHitLocation);
+		return true;
+	}
+	return false;
+}
 
+bool ATankPlayerController::GetLookDirection(FVector2D screenLocation, FVector& lookDirection) const {
+	FVector cameraWorldLocation;
+	return DeprojectScreenPositionToWorld(screenLocation.X, screenLocation.Y, cameraWorldLocation, lookDirection);
+}
 
-	return true;
+bool ATankPlayerController::GetLookVectorHitLocation(FVector lookDirection,FVector& hitLocation) const {
+	FHitResult hitResult;
+	FVector startLocation = PlayerCameraManager->GetCameraLocation();
+	FVector endLocation = startLocation + (lookDirection * lineTraceRange);
+	if (GetWorld()->LineTraceSingleByChannel(
+		hitResult,
+		startLocation,
+		endLocation,
+		ECollisionChannel::ECC_Visibility)
+	   ) 
+	{
+		hitLocation = hitResult.Location;
+		return true;
+	}
+	hitLocation = FVector(0);
+	return false;
 }
 
 
