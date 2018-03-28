@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "TankAimingComponent.h"
+#include "TankBarrel.h"
 #include "Engine.h"
-
 
 // Sets default values for this component's properties
 UTankAimingComponent::UTankAimingComponent()
@@ -14,27 +14,8 @@ UTankAimingComponent::UTankAimingComponent()
 	// ...
 }
 
-void UTankAimingComponent::SetBarrelReference(UStaticMeshComponent* BarrelToSet) {
+void UTankAimingComponent::SetBarrelReference(UTankBarrel* BarrelToSet) {
 	Barrel = BarrelToSet;
-}
-
-
-// Called when the game starts
-void UTankAimingComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// ...
-	
-}
-
-
-// Called every frame
-void UTankAimingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 }
 
 void UTankAimingComponent::AimAt(FVector hitLocation,float launchSpeed) {
@@ -46,24 +27,30 @@ void UTankAimingComponent::AimAt(FVector hitLocation,float launchSpeed) {
 	FVector outLaunchVelocity;
 	FVector startLocation = Barrel->GetSocketLocation(FName("Projectile"));
 
-	//Calculate the outLaunchVelocity 
-	if (UGameplayStatics::SuggestProjectileVelocity
-	    (
+	bool bHaveAimSolution = UGameplayStatics::SuggestProjectileVelocity(
 		this,
 		outLaunchVelocity,
 		startLocation,
 		hitLocation,
 		launchSpeed,
-		false,
-		0.0f,
-		0.0f,
 		ESuggestProjVelocityTraceOption::DoNotTrace
-		)
-	)
+	);
+
+	//Calculate the outLaunchVelocity 
+	if(bHaveAimSolution)
 	{
 		FVector aimDirection = outLaunchVelocity.GetSafeNormal();
-		FString tankName = GetOwner()->GetName();
-		UE_LOG(LogTemp, Warning, TEXT("%s is aiming at %s"),*tankName, *aimDirection.ToString());
+		MoveBarrelTowards(aimDirection);
 	}
+}
+
+void  UTankAimingComponent::MoveBarrelTowards(FVector aimDirection) {
+
+	FRotator barrelRotator = Barrel->GetForwardVector().Rotation();
+	FRotator aimAsRotator = aimDirection.Rotation();
+	FRotator deltaRotator = aimAsRotator - barrelRotator;
+
+	Barrel->Elevate(5);//TODO remove magic number
+
 }
 
