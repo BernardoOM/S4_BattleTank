@@ -2,6 +2,7 @@
 
 #include "TankAimingComponent.h"
 #include "TankBarrel.h"
+#include "TankTurret.h"
 #include "Engine.h"
 
 // Sets default values for this component's properties
@@ -15,7 +16,15 @@ UTankAimingComponent::UTankAimingComponent()
 }
 
 void UTankAimingComponent::SetBarrelReference(UTankBarrel* BarrelToSet) {
+
+	if (!BarrelToSet) { return; }
 	Barrel = BarrelToSet;
+}
+
+void UTankAimingComponent::SetTurretReference(UTankTurret* TurretToSet) {
+
+	if (!TurretToSet) { return; }
+	Turret = TurretToSet;
 }
 
 void UTankAimingComponent::AimAt(FVector hitLocation,float launchSpeed) {
@@ -33,14 +42,22 @@ void UTankAimingComponent::AimAt(FVector hitLocation,float launchSpeed) {
 		startLocation,
 		hitLocation,
 		launchSpeed,
-		ESuggestProjVelocityTraceOption::DoNotTrace
+		false,
+		0.0f,
+		0.0f,
+		ESuggestProjVelocityTraceOption::DoNotTrace //parameter must be present to prevent bug
 	);
 
+	auto time = GetWorld()->GetTimeSeconds();
 	//Calculate the outLaunchVelocity 
 	if(bHaveAimSolution)
 	{
 		FVector aimDirection = outLaunchVelocity.GetSafeNormal();
 		MoveBarrelTowards(aimDirection);
+		UE_LOG(LogTemp, Warning, TEXT("%f Aim solution found."), time);
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("%f No aim solution found."), time);
 	}
 }
 
@@ -50,7 +67,7 @@ void  UTankAimingComponent::MoveBarrelTowards(FVector aimDirection) {
 	FRotator aimAsRotator = aimDirection.Rotation();
 	FRotator deltaRotator = aimAsRotator - barrelRotator;
 
-	Barrel->Elevate(5);//TODO remove magic number
+	Barrel->Elevate(deltaRotator.Pitch);
 
 }
 
