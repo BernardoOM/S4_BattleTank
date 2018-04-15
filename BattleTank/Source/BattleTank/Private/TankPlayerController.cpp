@@ -10,13 +10,13 @@ void ATankPlayerController::BeginPlay() {
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("TankPlayerController has BeginPlay"));
 
-	ATank* myTank = GetControlledTank();
+	/*ATank* myTank = GetControlledTank();
 	if (myTank == nullptr) {
 		UE_LOG(LogTemp, Error, TEXT("There is not a Tank added to TankPlayerController"));
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("My tank was %s found."),*myTank->GetName());
-	}
+	}*/
 }
 
 // Called every frame
